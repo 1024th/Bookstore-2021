@@ -10,8 +10,8 @@
 - `src/`
   - `CommandParser.h` 指令解析
   - `CommandParser.cpp`
-  - `AccountManager.h` 用户管理
-  - `AccountManager.cpp`
+  - `UserManager.h` 用户管理
+  - `UserManager.cpp`
   - `BookManager.h` 图书管理
   - `BookManager.cpp`
   - `Logger.h` 日志系统
@@ -44,39 +44,69 @@
 
 ```cpp
 class CommandParser {
- public:
-  void run();  // 循环读入指令并解析，直到遇到 quit 或 exit
-  // 构造 CommandParser，将其与所给的 AccountManager 和 BookManager 关联起来
-  CommandParser(AccountManager &account_manager_, BookManager &book_manager_):
-    account_manager(account_manager_), book_manager(book_manager_) {}
-
  private:
-  // 储存与该类关联的 AccountManager 和 BookManager
-  AccountManager &account_manager;
+  // 储存与该类关联的 UserManager 和 BookManager
+  UserManager &user_manager;
   BookManager &book_manager;
-
   // 根据指令的第一个单词查找对应的函数，供 run 函数使用
   std::unordered_map<std::string, std::function<int(const char*)>> mapFunction;
 
+ public:
+  void run();  // 循环读入指令并解析，直到遇到 quit 或 exit
+  // 构造 CommandParser，将其与所给的 UserManager 和 BookManager 关联起来
+  CommandParser(UserManager &user_manager_, BookManager &book_manager_);
+
   // 以下函数供 run 函数调用，返回 0 表示指令合法，返回其他数字表示指令非法
-  void ParseSu(const char* cmd);  // 解析 su [User-ID] ([Password])?
-  void ParseLogout(const char* cmd);  // 解析 logout
-  void ParseRegister(const char* cmd);  // 解析 register [User-ID] [Password] [User-Name]
-  void ParsePasswd(const char* cmd);  // 解析 passwd [User-ID] ([Old-Password])? [New-Password]
-  void ParseUseradd(const char* cmd);  // 解析 useradd [User-ID] [Password] [Priority] [User-Name]
-  void ParseDelete(const char* cmd);  // 解析 delete [User-ID]
+  void ParseSu(const char *cmd);  // 解析 su [User-ID] ([Password])?
+  void ParseLogout(const char *cmd);  // 解析 logout
+  void ParseRegister(const char *cmd);  // 解析 register [User-ID] [Password] [User-Name]
+  void ParsePasswd(const char *cmd);  // 解析 passwd [User-ID] ([Old-Password])? [New-Password]
+  void ParseUseradd(const char *cmd);  // 解析 useradd [User-ID] [Password] [Priority] [User-Name]
+  void ParseDelete(const char *cmd);  // 解析 delete [User-ID]
 
-  void ParseShow(const char* cmd);  // 解析 show，调用 showBook 或 showFinance
+  void ParseShow(const char *cmd);  // 解析 show，调用 showBook 或 showFinance
 
-  void ParseShowBook(const char* cmd);  // 解析 show (-ISBN=[ISBN] | -name="[Book-Name]" | -author="[Author]" | -keyword="[Keyword]")?
-  void ParseBuy(const char* cmd);  // 解析 buy [ISBN] [Quantity]
-  void ParseSelect(const char* cmd);  // 解析 select [ISBN]
-  void ParseModify(const char* cmd);  // 解析 modify (-ISBN=[ISBN] | -name="[Book-Name]" | -author="[Author]" | -keyword="[Keyword]" | -price=[Price])+
-  void ParseImport(const char* cmd);  // 解析 import [Quantity] [Total-Cost]
+  void ParseShowBook(const char *cmd);  // 解析 show (-ISBN=[ISBN] | -name="[Book-Name]" | -author="[Author]" | -keyword="[Keyword]")?
+  void ParseBuy(const char *cmd);  // 解析 buy [ISBN] [Quantity]
+  void ParseSelect(const char *cmd);  // 解析 select [ISBN]
+  void ParseModify(const char *cmd);  // 解析 modify (-ISBN=[ISBN] | -name="[Book-Name]" | -author="[Author]" | -keyword="[Keyword]" | -price=[Price])+
+  void ParseImport(const char *cmd);  // 解析 import [Quantity] [Total-Cost]
 
-  void ParseReport(const char* cmd);  // 解析 report myself 或 report finance 或 report employee
-  void ParseShowFinance(const char* cmd);  // 解析 show finance ([Time])?
-  void ParseLog(const char* cmd);  // 解析 log
+  void ParseReport(const char *cmd);  // 解析 report myself 或 report finance 或 report employee
+  void ParseShowFinance(const char *cmd);  // 解析 show finance ([Time])?
+  void ParseLog(const char *cmd);  // 解析 log
+};
+```
+
+### 用户管理
+
+`UserManager` 需要通过 `UnrolledLinkedList` 读写 `users.dat`。
+
+```cpp
+class UserManager;
+class User {
+  friend class UserManager;
+
+ private:
+  char password[31];
+
+ public:
+  char user_ID[31];
+  char user_name[31];
+  int priority;  // 权限，可以取 7 或 3 或 1
+};
+
+class UserManager {
+ private:
+  User current_user;
+
+ public:
+  int Login(const char* user_id);  // 登录用户
+  int Logout();  // 退出登录
+  int ChangePassword(const char* user_id, const char* old_password, const char* new_password);  // 修改密码
+  int CreateUser(const char* user_id, const char* password, const int priority, const char* user_name);  // 创建用户
+  int Register(const char* user_id, const char* password, const char* user_name);  // 注册账户
+  int remove(const char* user_id);  // 删除账户
 };
 ```
 
@@ -96,18 +126,20 @@ class Book {
 
 图书管理类
 
+图书信息存放于 `book.dat`，无序。检索图书时需要的索引存放于 `*.index`。
+
 ```cpp
 class BookManager {
  private:
   Book selected_book;
-  Logger& logger;
+  Logger &logger;
  public:
-  BookManager(Logger& logger_);  // 与所给的 Logger 关联
+  BookManager(Logger &logger_);  // 与所给的 Logger 关联
   enum ParaType {ISBN, NAME, AUTHOR, KEYWORD};  // 参数类型
-  void ShowBook(ParaType para_type, const char* arg);  // 检索图书
-  void BuyBook(const char* ISBN, int quantity);  // 购买图书
-  void SelectBook(const char* ISBN);  // 以当前账户选中指定图书
-  void ModifyBook(ParaType para_type, const char* arg);  // 更新选中图书的信息
+  void ShowBook(ParaType para_type, const char *arg);  // 检索图书
+  void BuyBook(const char *ISBN, int quantity);  // 购买图书
+  void SelectBook(const char *ISBN);  // 以当前账户选中指定图书
+  void ModifyBook(ParaType para_type, const char *arg);  // 更新选中图书的信息
   void ModifyBook(ParaType para_type, int price);  // 更新选中图书的信息
   void ImportBook(int quantity, double total_cost);  // 指定交易总额购入指定数量的选中图书
 };
@@ -115,23 +147,37 @@ class BookManager {
 
 ### 日志系统
 
+日志格式 `[time] [user-id] (success|fail) [command]`。
+
+其中 `[time]` 格式为 `%Y-%m-%d %H:%M:%S`，例如 `2021-12-07 20:05:25`；若当前没有已登陆的用户，则 `[user-id]` 为 `<guest>`；`(success|fail)` 表示该指令是否正常执行；`[command]` 为输入的指令。
+
+对于 `import` 和 `modify` 指令，如果当前有被选中的书，以 `[command] [ISBN] [args]` 格式输出，例如：
+
+```plain
+2021-09-01 08:30:00 root success select 978-7-115-42935-3
+2021-09-01 08:30:01 root success import 978-7-115-42935-3 33 233.33
+2021-09-01 08:30:05 root success modify 978-7-115-42935-3 -name="C++ Program Design" -author="why, yyu" -price=49.8
+```
+
 ```cpp
 class Logger {
-  AccountManager& account_manager;
+  UserManager &user_manager;
+  BookManager &book_manager;
  public:
-  Logger(AccountManager& account_manager_);  // 与所给的 AccountManager 关联
+  Logger(UserManager &user_manager_, BookManager &book_manager_);  // 与所给的 UserManager 和 BookManager 关联
   void ShowFinance(int time = -1);  // 输出财务记录
   void ReportMyself();  // 输出员工自己的操作记录
   void ReportFinance();  // 生成财务记录报告 
   void ReportWork();  // 生成全体员工工作情况报告
   void ReportEmployee();  // 生成员工工作情况表，记录其操作
   void ShowLog();  // 生成日志，包括谁干了什么，以及财务上每一笔交易
+  void Log(const char *command);  // 写入日志文件
 };
 ```
 
 ### 基础文件读写
 
-类似于 Memory River 的包含空间回收的文件读写类。
+类似于 Memory River 的包含空间回收的文件读写类。用于存储 `books.dat` 中的图书信息。也用于写入 `finance.dat` 和 `log.dat`。
 
 ```cpp
 template <class ValueType, std::size_t info_len>
@@ -152,23 +198,29 @@ class BasicFileIO {
 
 ### 块状链表
 
+有序地存放数据。用于读写 `*.index` 和 `users.dat`。
+
 ```cpp
 template <typename KeyType, typename ValueType>
 class UnrolledLinkedList {
  public:
   // 迭代器类型
   struct iterator {
+    std::size_t pos;  // 指向文件中的位置
     iterator &operator++();  // 自增运算符
-    const std::pair<KeyType, ValueType> &operator*() const;  // 解引用运算符
+    iterator &operator--();  // 自减运算符
+    const std::pair<KeyType, ValueType> operator*() const;  // 解引用运算符
     bool operator!=(const iterator &other) const;
+    bool operator==(const iterator &other) const;
   };
 
   UnrolledLinkedList(const char *filename);
   iterator begin() const;  // 返回第一个元素的迭代器
   iterator end() const;
   void add(const KeyType &key, const ValueType &value);  // 添加键值对
-  void remove(const KeyType &index, const ValueType &value);  // 删除键值对
-  iterator find(const KeyType &index) const;  // 查找 key，如果找不到，返回 end()
+  void remove(const KeyType &key, const ValueType &value);  // 删除键值对
+  void remove(const iterator position);  // 通过迭代器删除键值对
+  iterator find(const KeyType &key) const;  // 查找 key，如果找不到，返回 end()
 };
 ```
 
@@ -180,9 +232,9 @@ class UnrolledLinkedList {
 
 ```cpp
 class BasicException : public std::exception {
-  const char* message;
-  BasicException(const char* message_);
-  const char* what() { return message; }
+  const char *message;
+  BasicException(const char *message_);
+  const char *what() { return message; }
 };
 ```
 
