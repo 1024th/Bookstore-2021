@@ -48,13 +48,14 @@ class CommandParser {
   // 储存与该类关联的 UserManager 和 BookManager
   UserManager &user_manager;
   BookManager &book_manager;
+  Logger &logger;
   // 根据指令的第一个单词查找对应的函数，供 run 函数使用
   std::unordered_map<std::string, std::function<int(const char*)>> mapFunction;
 
  public:
   void run();  // 循环读入指令并解析，直到遇到 quit 或 exit
-  // 构造 CommandParser，将其与所给的 UserManager 和 BookManager 关联起来
-  CommandParser(UserManager &user_manager_, BookManager &book_manager_);
+  // 构造 CommandParser，将其与所给的 UserManager，BookManager 和 Logger 关联起来
+  CommandParser(UserManager &user_manager_, BookManager &book_manager_, Logger &logger_);
 
   // 以下函数供 run 函数调用，返回 0 表示指令合法，返回其他数字表示指令非法
   void ParseSu(const char *cmd);  // 解析 su [User-ID] ([Password])?
@@ -132,9 +133,7 @@ class Book {
 class BookManager {
  private:
   Book selected_book;
-  Logger &logger;
  public:
-  BookManager(Logger &logger_);  // 与所给的 Logger 关联
   enum ParaType {ISBN, NAME, AUTHOR, KEYWORD};  // 参数类型
   void ShowBook(ParaType para_type, const char *arg);  // 检索图书
   void BuyBook(const char *ISBN, int quantity);  // 购买图书
