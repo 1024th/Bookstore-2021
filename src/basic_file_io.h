@@ -3,6 +3,10 @@
 
 #include <fstream>
 
+#ifdef MyDebug
+#include "debug_print.hpp"
+#endif //MyDebug
+
 class BasicFileIO {
   const std::string filename;
   std::fstream file;

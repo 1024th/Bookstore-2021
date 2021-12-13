@@ -6,5 +6,6 @@ CMakeCache.txt
 Makefile
 code
 test*/
+ull-test/
 *.dat
 *.index

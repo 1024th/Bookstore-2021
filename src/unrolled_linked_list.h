@@ -22,11 +22,11 @@ struct KeyValuePair {
   KeyValuePair() {}
   KeyValuePair(KeyType key_, ValueType value_) : key(key_), value(value_) {}
   KeyValuePair &operator=(const KeyValuePair &that);
-  template<typename T1, typename T2>
+  template <typename T1, typename T2>
   friend bool operator<(const KeyValuePair<T1, T2> &a, const KeyValuePair<T1, T2> &b);
-  template<typename T1, typename T2>
+  template <typename T1, typename T2>
   friend bool operator==(const KeyValuePair<T1, T2> &a, const KeyValuePair<T1, T2> &b);
-  template<typename T1, typename T2>
+  template <typename T1, typename T2>
   friend bool operator!=(const KeyValuePair<T1, T2> &a, const KeyValuePair<T1, T2> &b);
 };
 
@@ -39,7 +39,8 @@ struct Block {
   Block(std::streamoff next_, std::streamoff prev_, int len_) : next(next_), prev(prev_), len(len_) {}
   Block &operator=(const Block &that);
 #ifdef MyDebug
-  friend std::ostream &operator<<(std::ostream &os, const Block &block);
+  template <typename T, const int size>
+  friend std::ostream &operator<<(std::ostream &os, const Block<T, size> &block);
 #endif  // MyDebug
 };
 
@@ -79,7 +80,6 @@ class UnrolledLinkedList {
   std::streamoff WriteToNewBlock(const Block<NodeType, kBlockSize> &block);
 };
 
-
 template <typename T1, typename T2>
 KeyValuePair<T1, T2> &KeyValuePair<T1, T2>::operator=(const KeyValuePair<T1, T2> &that) {
   key = that.key;
@@ -115,8 +115,8 @@ Block<T, size> &Block<T, size>::operator=(const Block<T, size> &that) {
 }
 
 #ifdef MyDebug
-template <typename T1, typename T2, const int size>
-std::ostream &operator<<(std::ostream &os, const Block<T1, T2, size> &block) {
+template <typename T, const int size>
+std::ostream &operator<<(std::ostream &os, const Block<T, size> &block) {
   PrintTight("Block: next=", block.next, ", prev=", block.prev, ", len=", block.len);
   return os;
 }
@@ -177,7 +177,7 @@ void UnrolledLinkedList<T1, T2, size>::add(const T1 &key, const T2 &value) {
 
 template <typename T1, typename T2, const int size>
 void UnrolledLinkedList<T1, T2, size>::remove(const T1 &key, const T2 &value) {
-  KeyValuePair key_value_pair(key, value);
+  NodeType key_value_pair(key, value);
   file.open();
   Block<NodeType, size> block;
   std::streamoff block_pos;
@@ -260,11 +260,9 @@ void UnrolledLinkedList<T1, T2, size>::CheckMerge(Block<NodeType, size> &block, 
     file.Read(next_block, block.next);
     if (block.len + next_block.len < kBlockMergeThreshold) {
       MergeBlock(block, block_pos, next_block, block.next);
-      return;
     }
   }
-  // TODO: check
-  // last block becomes empty?
+  if (block.len == 0) DeleteBlock(block, block_pos);
 }
 
 template <typename T1, typename T2, const int size>
@@ -274,13 +272,21 @@ void UnrolledLinkedList<T1, T2, size>::MergeBlock(Block<NodeType, size> &block1,
     block1.array[block1.len + 1] = block2.array[i];
   }
   block1.len += block2.len;
-  block1.next = block2.next;
-  SetPrev(block1.next, block1_pos);
+  // block1.next = block2.next;
+  // if (block1.next) SetPrev(block1.next, block1_pos);
   DeleteBlock(block2, block2_pos);
 }
 
 template <typename T1, typename T2, const int size>
 void UnrolledLinkedList<T1, T2, size>::DeleteBlock(Block<NodeType, size> &block, std::streamoff block_pos) {
+  if (block.prev)
+    SetNext(block.prev, block.next);
+  else
+    file.Write(block.next, 0);  // head
+  if (block.next)
+    SetPrev(block.next, block.prev);
+  else
+    file.Write(block.prev, sizeof(std::streamoff));  // tail
   SetNext(block_pos, GetFreeMemoryHead());
   SetFreeMemoryHead(block_pos);
 }
