@@ -46,7 +46,6 @@ struct Block {
 
 template <typename KeyType, typename ValueType, const int kBlockSize = 320>
 class UnrolledLinkedList {
-  const std::string filename;
   BasicFileIO file;
 
  public:
@@ -125,20 +124,20 @@ std::ostream &operator<<(std::ostream &os, const Block<T, size> &block) {
 template <typename T1, typename T2, const int size>
 UnrolledLinkedList<T1, T2, size>::UnrolledLinkedList(const std::string &filename_) : file(filename_) {
 #ifdef MyDebug
-  std::filesystem::remove(filename);
-  Print("book.dat deleted");
+  // std::filesystem::remove(filename);
+  // Print("book.dat deleted");
 #endif  // MyDebug
 
   // 如果文件不存在则创建文件
-  if (!std::filesystem::exists(filename)) {
+  if (!std::filesystem::exists(filename_)) {
 #ifdef MyDebug
-    Print(filename, "not exist, create it.");
+    Print(filename_, "not exist, create it.");
 #endif  // MyDebug
     // 文件结构：
     // std::streamoff head, tail, free_memory_head
     // Block ...
     // file.open(filename, std::ios::in | std::ios::out | std::ios::binary);
-    file.open(std::ios::out | std::ios::binary);
+    file.open(std::ios_base::out | std::ios_base::binary);
     std::streamoff head = 0, tail = 0, free_memory_head = 0;
     file.Write(head);
     file.Write(tail);
@@ -268,6 +267,9 @@ void UnrolledLinkedList<T1, T2, size>::CheckMerge(Block<NodeType, size> &block, 
 template <typename T1, typename T2, const int size>
 void UnrolledLinkedList<T1, T2, size>::MergeBlock(Block<NodeType, size> &block1, std::streamoff block1_pos,
                                                   Block<NodeType, size> &block2, std::streamoff block2_pos) {
+#ifdef MyDebug
+  Print("Merge Block", block1, "at", block1_pos, "ans", block2, "as", block2_pos);
+#endif  // MyDebug
   for (int i = 0; i < block2.len; ++i) {
     block1.array[block1.len + i] = block2.array[i];
   }
