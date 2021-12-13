@@ -269,7 +269,7 @@ template <typename T1, typename T2, const int size>
 void UnrolledLinkedList<T1, T2, size>::MergeBlock(Block<NodeType, size> &block1, std::streamoff block1_pos,
                                                   Block<NodeType, size> &block2, std::streamoff block2_pos) {
   for (int i = 0; i < block2.len; ++i) {
-    block1.array[block1.len + 1] = block2.array[i];
+    block1.array[block1.len + i] = block2.array[i];
   }
   block1.len += block2.len;
   // block1.next = block2.next;
@@ -336,10 +336,7 @@ void UnrolledLinkedList<T1, T2, size>::SetFreeMemoryHead(std::streamoff free_mem
 
 template <typename T1, typename T2, const int size>
 std::streamoff UnrolledLinkedList<T1, T2, size>::WriteToNewBlock(const Block<NodeType, size> &block) {
-  std::streamoff free_memory_head, new_block_pos;
-  // 获取当前的 free_memory_head
-  file.Read(free_memory_head, 2 * sizeof(std::streamoff));
-
+  std::streamoff free_memory_head = GetFreeMemoryHead(), new_block_pos;
   if (free_memory_head) {
     new_block_pos = free_memory_head;
     // 读取下一个 free_memory_head
@@ -351,7 +348,7 @@ std::streamoff UnrolledLinkedList<T1, T2, size>::WriteToNewBlock(const Block<Nod
     file.Write(next, 2 * sizeof(std::streamoff));
   } else {
     // 在文件末尾创建新块
-    file.seekp(0, std::ios::end);
+    file.seekp(0, std::ios_base::end);
     new_block_pos = file.tellp();
     file.Write(block);
   }

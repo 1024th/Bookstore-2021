@@ -5,7 +5,7 @@
 
 #ifdef MyDebug
 #include "debug_print.hpp"
-#endif //MyDebug
+#endif  // MyDebug
 
 class BasicFileIO {
   const std::string filename;
@@ -15,7 +15,7 @@ class BasicFileIO {
   BasicFileIO(const std::string filename_);
   void open(std::ios_base::openmode mode = std::ios_base::in | std::ios_base::out | std::ios_base::binary);
   void close();
-  std::ostream &seekp(std::streampos pos, std::ios_base::seekdir dir);
+  std::ostream &seekp(std::streamoff offset, std::ios_base::seekdir dir);
   std::streampos tellp();
 
   // 从文件中读出 sizeof(T) 字节的内容放入所给变量，需要确保调用时已经打开了文件
@@ -37,11 +37,9 @@ class BasicFileIO {
 
 BasicFileIO::BasicFileIO(const std::string filename_) : filename(filename_) {}
 
-void BasicFileIO::open(std::ios_base::openmode mode) {
-  file.open(filename, mode);
-}
+void BasicFileIO::open(std::ios_base::openmode mode) { file.open(filename, mode); }
 void BasicFileIO::close() { file.close(); }
-std::ostream &BasicFileIO::seekp(std::streampos pos, std::ios_base::seekdir dir) { return file.seekp(pos, dir); }
+std::ostream &BasicFileIO::seekp(std::streamoff offset, std::ios_base::seekdir dir) { return file.seekp(offset, dir); }
 std::streampos BasicFileIO::tellp() { return file.tellp(); }
 
 // 从文件中读出 sizeof(T) 字节的内容放入所给变量，需要确保调用时已经打开了文件
