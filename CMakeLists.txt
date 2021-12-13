@@ -9,7 +9,7 @@ include_directories(
         ${PROJECT_SOURCE_DIR}/bin/
 )
 set(src_dir
-        ${PROJECT_SOURCE_DIR}/src/main.cpp
+        ${PROJECT_SOURCE_DIR}/src/storage_test.cpp
         )
 add_executable(code ${src_dir})
 
