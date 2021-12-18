@@ -8,20 +8,20 @@
 
 - `main.cpp` 入口点
 - `src/`
-  - `CommandParser.h` 指令解析
-  - `CommandParser.cpp`
-  - `UserManager.h` 用户管理
-  - `UserManager.cpp`
-  - `BookManager.h` 图书管理
-  - `BookManager.cpp`
-  - `Logger.h` 日志系统
-  - `Logger.cpp`
-  - `Exceptions.h` 异常处理
-  - `Exceptions.cpp`
-  - `BasicFileIO.h` 基础文件读写类
-  - `BasicFileIO.cpp`
-  - `UnrolledLinkedList.h` 块状链表
-  - `UnrolledLinkedList.cpp`
+  - `command_parser.h` 指令解析
+  - `command_parser.cpp`
+  - `user_manager.h` 用户管理
+  - `user_manager.cpp`
+  - `book_manager.h` 图书管理
+  - `book_manager.cpp`
+  - `logger.h` 日志系统
+  - `logger.cpp`
+  - `exceptions.h` 异常处理
+  - `exceptions.cpp`
+  - `basic_file_io.h` 基础文件读写类
+  - `basic_file_io.cpp`
+  - `unrolled_linked_list.h` 块状链表
+  - `unrolled_linked_list.cpp`
 - `data/`
   - `books.dat` 储存的书本信息
   - `ISBN.index` 按 ISBN 升序储存对应书本的在 `books.dat` 中的位置
@@ -53,11 +53,10 @@ class CommandParser {
   std::unordered_map<std::string, std::function<int(const char*)>> mapFunction;
 
  public:
-  void run();  // 循环读入指令并解析，直到遇到 quit 或 exit
+  void Run();  // 循环读入指令并解析，直到遇到 quit 或 exit
   // 构造 CommandParser，将其与所给的 UserManager，BookManager 和 Logger 关联起来
   CommandParser(UserManager &user_manager_, BookManager &book_manager_, Logger &logger_);
 
-  // 以下函数供 run 函数调用，返回 0 表示指令合法，返回其他数字表示指令非法
   void ParseSu(const char *cmd);  // 解析 su [User-ID] ([Password])?
   void ParseLogout(const char *cmd);  // 解析 logout
   void ParseRegister(const char *cmd);  // 解析 register [User-ID] [Password] [User-Name]
@@ -79,6 +78,35 @@ class CommandParser {
 };
 ```
 
+### 字符串类
+
+包装了 `char` 数组，重载运算符以支持比较。
+
+
+```cpp
+template <const int size = 64>
+class Char {
+  char content[size + 1];  // 多开一位用来放 '\0'
+
+ public:
+  Char();
+  Char(const std::string &s);
+  Char(const char *cstr);
+  operator std::string() const;
+  std::string str() const;
+
+  Char &operator=(const Char &that);
+  friend bool operator<(const Char<size> &a, const Char<size> &b);
+  friend bool operator==(const Char<size> &a, const Char<size> &b);
+  friend bool operator>(const Char<size> &a, const Char<size> &b);
+  friend bool operator<=(const Char<size> &a, const Char<size> &b);
+  friend bool operator>=(const Char<size> &a, const Char<size> &b);
+  friend bool operator!=(const Char<size> &a, const Char<size> &b);
+  friend std::istream &operator>>(std::istream &is, Char<size> &s);
+  friend std::ostream &operator<<(std::ostream &os, const Char<size> &s);
+};
+```
+
 ### 用户管理
 
 `UserManager` 需要通过 `UnrolledLinkedList` 读写 `users.dat`。
@@ -89,17 +117,17 @@ class User {
   friend class UserManager;
 
  private:
-  char password[31];
+  Char<30> password;
 
  public:
-  char user_ID[31];
-  char user_name[31];
+  Char<30> user_ID;
+  Char<30> user_name;
   int priority;  // 权限，可以取 7 或 3 或 1
 };
 
 class UserManager {
  private:
-  User current_user;
+  std::vector<std::pair<User, int>> user_stack;  // 用户栈，储存登录的用户和他所选的图书的 offset
 
  public:
   int Login(const char* user_id);  // 登录用户
@@ -107,7 +135,7 @@ class UserManager {
   int ChangePassword(const char* user_id, const char* old_password, const char* new_password);  // 修改密码
   int CreateUser(const char* user_id, const char* password, const int priority, const char* user_name);  // 创建用户
   int Register(const char* user_id, const char* password, const char* user_name);  // 注册账户
-  int remove(const char* user_id);  // 删除账户
+  int Remove(const char* user_id);  // 删除账户
 };
 ```
 
@@ -118,9 +146,9 @@ class UserManager {
 ```cpp
 class Book {
  public:
-  char ISBN[21];
-  char name[61], author[61];
-  char keyword[61];
+  Char<20> ISBN;
+  Char<60> name, author;
+  Char<60> keyword;
   int quantity, price;
 };
 ```
@@ -131,8 +159,6 @@ class Book {
 
 ```cpp
 class BookManager {
- private:
-  Book selected_book;
  public:
   enum ParaType {ISBN, NAME, AUTHOR, KEYWORD};  // 参数类型
   void ShowBook(ParaType para_type, const char *arg);  // 检索图书
@@ -184,14 +210,14 @@ class BasicFileIO {
  public:
   BasicFileIO(const string &file_name) : file_name(file_name) {}
   template <typename T>
-  void read_info(T *info, std::size_t size, int index);  // 从信息区的指定位置读取信息
+  void ReadInfo(T *info, std::size_t size, int index);  // 从信息区的指定位置读取信息
   template <typename T>
-  void write_info(T &info, std::size_t size, int index);  // 将信息写入信息区指定位置
+  void WriteInfo(T &info, std::size_t size, int index);  // 将信息写入信息区指定位置
 
-  int write(ValueType &t);  // 新建并写入对象，返回 index
-  void update(ValueType &value, const int index);  // 用 value 的值更新位置 index 对应的对象
-  void read(ValueType &value, const int index);  // 读出 index 对应的对象并赋给 value
-  void remove(int index);  // 删除 index 对应的对象
+  int Write(ValueType &t);  // 新建并写入对象，返回 index
+  void Update(ValueType &value, const int index);  // 用 value 的值更新位置 index 对应的对象
+  void Read(ValueType &value, const int index);  // 读出 index 对应的对象并赋给 value
+  void Remove(int index);  // 删除 index 对应的对象
 };
 ```
 
@@ -203,23 +229,10 @@ class BasicFileIO {
 template <typename KeyType, typename ValueType>
 class UnrolledLinkedList {
  public:
-  // 迭代器类型
-  struct iterator {
-    std::size_t pos;  // 指向文件中的位置
-    iterator &operator++();  // 自增运算符
-    iterator &operator--();  // 自减运算符
-    const std::pair<KeyType, ValueType> operator*() const;  // 解引用运算符
-    bool operator!=(const iterator &other) const;
-    bool operator==(const iterator &other) const;
-  };
-
   UnrolledLinkedList(const char *filename);
-  iterator begin() const;  // 返回第一个元素的迭代器
-  iterator end() const;
-  void add(const KeyType &key, const ValueType &value);  // 添加键值对
-  void remove(const KeyType &key, const ValueType &value);  // 删除键值对
-  void remove(const iterator position);  // 通过迭代器删除键值对
-  iterator find(const KeyType &key) const;  // 查找 key，如果找不到，返回 end()
+  void Add(const KeyType &key, const ValueType &value);  // 添加键值对
+  void Remove(const KeyType &key, const ValueType &value);  // 删除键值对
+  void Find(const KeyType &key, std::vector<Value>) const;  // 查找 key，如果找不到，返回 end()
 };
 ```
 
