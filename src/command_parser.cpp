@@ -1,5 +1,10 @@
 #include "command_parser.h"
 
+#include "bookstore.h"
+#include "user_manager.h"
+#include "logger.h"
+#include "exceptions.h"
+
 void CommandParser::SplitStr(const std::string &s, std::vector<std::string> &fragments, const char delim) {
   int i = 0;
   while (s[i] == delim) ++i;
@@ -45,7 +50,8 @@ bool CommandParser::CheckPrintable(const std::string &s, int max_len) {
 }
 
 bool CommandParser::CheckPriority(const std::string &s) {
-  return s == "7" || s == "3" || s == "1" || s == "0";
+//  return s == "7" || s == "3" || s == "1" || s == "0";
+  return s == "7" || s == "3" || s == "1";
 }
 
 bool CommandParser::CheckInt(const std::string &s, int max_len) {
@@ -76,60 +82,68 @@ void CommandParser::Run() {
   std::string line;
   while (std::getline(std::cin, line)) {
     try {
+      if (line.length() > 1024) throw CommandTooLong();
       std::vector<std::string> args;
       SplitStr(line, args);
       if (args.empty()) continue;  // 空行
-      if (args[0] == "quit" || args[0] == "exit") break;
+      if (args[0] == "quit" || args[0] == "exit") {
+        if (args.size() == 1) break;
+        else throw SyntaxError();
+      }
       auto it = map_function.find(args[0]);
       if (it == map_function.end()) throw SyntaxError();
       (this->*(it->second))(args);
-    } catch (...) {
+    } catch (const BasicException &e) {
       std::cout << "Invalid\n";
+#ifdef MyDebug
+      std::cout << e.what() << std::endl;
+      std::cout << "Invalid command is: " << line << std::endl;
+#endif  // MyDebug
     }
   }
 }
 
-CommandParser::CommandParser(UserManager &user_manager_, BookManager &book_manager_, Logger &logger_) : user_manager(
-    user_manager_), book_manager(book_manager_), logger(logger_) {
-}
+//CommandParser::CommandParser(UserManager &user_manager_, BookManager &book_manager_, Logger &logger_) : user_manager(
+//    user_manager_), book_manager(book_manager_), logger(logger_) {
+//}
 
 void CommandParser::ParseSu(const std::vector<std::string> &args) {
   int len = args.size();
   if (len < 2 || !CheckUserID(args[1])) throw SyntaxError();
-  if (len == 2) user_manager.Login(args[1]);
-  else if (len == 3) user_manager.Login(args[1], args[2]);
+  if (len == 2) bookstore->user_manager->Login(args[1]);
+  else if (len == 3) bookstore->user_manager->Login(args[1], args[2]);
   else throw SyntaxError();
 }
 
 void CommandParser::ParseLogout(const std::vector<std::string> &args) {
   if (args.size() != 1) throw SyntaxError();
-  user_manager.Logout();
+  bookstore->user_manager->Logout();
 }
 
 void CommandParser::ParseRegister(const std::vector<std::string> &args) {
   if (args.size() != 4) throw SyntaxError();
   if (!CheckUserID(args[1]) || !CheckPassword(args[2]) || !CheckUserName(args[3])) throw SyntaxError();
-  user_manager.Register(args[1], args[2], args[3]);
+  bookstore->user_manager->Register(args[1], args[2], args[3]);
 }
 
 void CommandParser::ParsePasswd(const std::vector<std::string> &args) {
   int len = args.size();
   if (len < 3 || len > 4) throw SyntaxError();
-  if (!CheckUserID(args[1]) || !CheckPassword(args[2]) || (len == 4 && CheckPassword(args[3]))) throw SyntaxError();
-  if (len == 3) user_manager.ChangePassword(args[1], args[2]);
-  if (len == 4) user_manager.ChangePassword(args[1], args[2], args[3]);
+  if (!CheckUserID(args[1]) || !CheckPassword(args[2]) || (len == 4 && !CheckPassword(args[3]))) throw SyntaxError();
+  if (len == 3) bookstore->user_manager->ChangePassword(args[1], args[2]);
+  if (len == 4) bookstore->user_manager->ChangePassword(args[1], args[2], args[3]);
 }
 
 void CommandParser::ParseUseradd(const std::vector<std::string> &args) {
   if (args.size() != 5) throw SyntaxError();
   if (!CheckUserID(args[1]) || !CheckPassword(args[2]) || !CheckPriority(args[3]) || !CheckUserName(args[4]))
     throw SyntaxError();
-  user_manager.CreateUser(args[1], args[2], std::stoi(args[3]), args[4]);
+  bookstore->user_manager->CreateUser(args[1], args[2], std::stoi(args[3]), args[4]);
 }
 
 void CommandParser::ParseDelete(const std::vector<std::string> &args) {
-  if (args.size() != 2 || CheckUserID(args[1])) throw SyntaxError();
-  user_manager.Remove(args[1]);
+  if (args.size() != 2 || !CheckUserID(args[1])) throw SyntaxError();
+  bookstore->user_manager->Remove(args[1]);
 }
 
 void CommandParser::ParseShow(const std::vector<std::string> &args) {
@@ -169,22 +183,23 @@ BookManager::Argument CommandParser::ParseFilter(const std::string &s) {
     if (it->second == BookManager::ArgType::KEYWORD && filter[1].find('|') != std::string::npos)
       throw SyntaxError();
   }
-  if (it->second != BookManager::ArgType::ISBN) {  // 去除双引号
+  if (it->second != BookManager::ArgType::ISBN && it->second != BookManager::ArgType::PRICE) {  // 去除双引号
     if (filter[1].front() != '"' || filter[1].back() != '"') throw SyntaxError();
     filter[1] = filter[1].substr(1, filter[1].length() - 2);
   }
   if (filter[1].empty()) throw SyntaxError();  // 附加参数内容为空则操作失败
   if (!map_book_argument_checker[it->second](filter[1])) throw SyntaxError();
+  if (it->second == BookManager::ArgType::PRICE) return BookManager::Argument(it->second, std::stod(filter[1]));
   return BookManager::Argument(it->second, filter[1]);
 }
 
 void CommandParser::ParseShowBook(const std::vector<std::string> &args) {
   if (args.size() == 1) {  // 无附加参数时，所有图书均满足要求
-    book_manager.ShowAllBooks();
+    bookstore->book_manager->ShowAllBooks();
     return;
   }
   if (args.size() != 2) throw SyntaxError();
-  book_manager.ShowBook(ParseFilter<true, true>(args[1]));
+  bookstore->book_manager->ShowBook(ParseFilter<true, true>(args[1]));
 }
 
 int CommandParser::ParseInt(const std::string &s) {
@@ -197,13 +212,13 @@ int CommandParser::ParseInt(const std::string &s) {
 void CommandParser::ParseBuy(const std::vector<std::string> &args) {
   if (args.size() != 3) throw SyntaxError();
   if (!CheckISBN(args[1])) throw SyntaxError();
-  book_manager.BuyBook(args[1], ParseInt(args[2]));
+  bookstore->book_manager->BuyBook(args[1], ParseInt(args[2]));
 }
 
 void CommandParser::ParseSelect(const std::vector<std::string> &args) {
   if (args.size() != 2) throw SyntaxError();
   if (!CheckISBN(args[1])) throw SyntaxError();
-  book_manager.SelectBook(args[1]);
+  bookstore->book_manager->SelectBook(args[1]);
 }
 
 void CommandParser::ParseModify(const std::vector<std::string> &args) {
@@ -218,29 +233,29 @@ void CommandParser::ParseModify(const std::vector<std::string> &args) {
     arg_type_used[book_arg.type] = true;
     book_args.push_back(book_arg);
   }
-  book_manager.ModifyBook(book_args);
+  bookstore->book_manager->ModifyBook(book_args);
 }
 
 void CommandParser::ParseImport(const std::vector<std::string> &args) {
   if (args.size() != 3) throw SyntaxError();
   int quantity = ParseInt(args[1]);
   if (!CheckFloat(args[2])) throw SyntaxError();
-  book_manager.ImportBook(quantity, std::stod(args[2]));
+  bookstore->book_manager->ImportBook(quantity, std::stod(args[2]));
 }
 
 void CommandParser::ParseReport(const std::vector<std::string> &args) {
   if (args.size() != 2) throw SyntaxError();
-  if (args[1] == "myself") logger.ReportMyself();
-  else if (args[1] == "finance") logger.ReportFinance();
-  else if (args[1] == "employee") logger.ReportEmployee();
+  if (args[1] == "myself") bookstore->logger->ReportMyself();
+  else if (args[1] == "finance") bookstore->logger->ReportFinance();
+  else if (args[1] == "employee") bookstore->logger->ReportEmployee();
   else throw SyntaxError();
 }
 
 void CommandParser::ParseShowFinance(const std::vector<std::string> &args) {
   if (args.size() == 2) {
-    logger.ShowFinance();
+    bookstore->logger->ShowFinance();
   } else if (args.size() == 3) {
-    logger.ShowFinance(ParseInt(args[2]));
+    bookstore->logger->ShowFinance(ParseInt(args[2]));
   } else {
     throw SyntaxError();
   }
@@ -248,5 +263,5 @@ void CommandParser::ParseShowFinance(const std::vector<std::string> &args) {
 
 void CommandParser::ParseLog(const std::vector<std::string> &args) {
   if (args.size() != 1) throw SyntaxError();
-  logger.ShowLog();
+  bookstore->logger->ShowLog();
 }

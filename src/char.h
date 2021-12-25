@@ -4,7 +4,7 @@
 #include <cstring>
 #include <iostream>
 
-template <const int size = 64>
+template<const int size = 64>
 class Char {
   char content[size + 1];
 
@@ -17,9 +17,11 @@ class Char {
   std::string str() const { return std::string(content); }
 
   Char &operator=(const Char &that) {
+    if (this == &that) return *this;
     strcpy(content, that.content);
     return *this;
   }
+  bool empty() const { return content[0] == '\0'; }
   friend bool operator<(const Char<size> &a, const Char<size> &b) { return strcmp(a.content, b.content) < 0; }
   friend bool operator==(const Char<size> &a, const Char<size> &b) { return strcmp(a.content, b.content) == 0; }
   friend bool operator>(const Char<size> &a, const Char<size> &b) { return strcmp(a.content, b.content) > 0; }

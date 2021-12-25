@@ -1,18 +1,16 @@
+#ifndef BOOKSTORE_SRC_COMMAND_PARSER_H_
+#define BOOKSTORE_SRC_COMMAND_PARSER_H_
+
 #include <iostream>
 #include <sstream>
 #include <unordered_map>
+#include <vector>
 
 #include "book_manager.h"
-#include "logger.h"
-#include "user_manager.h"
-#include "exceptions.h"
 
+class Bookstore;
 class CommandParser {
  private:
-  // 储存与该类关联的 UserManager 和 BookManager
-  UserManager &user_manager;
-  BookManager &book_manager;
-  Logger &logger;
   // 根据指令的第一个单词查找对应的函数，供 Run 函数使用
   std::unordered_map<std::string, void (CommandParser::*)(const std::vector<std::string> &)>
       map_function{{"su", &CommandParser::ParseSu},
@@ -29,9 +27,8 @@ class CommandParser {
                    {"report", &CommandParser::ParseReport},
                    {"log", &CommandParser::ParseLog}};
  public:
+  Bookstore *bookstore;
   void Run();  // 循环读入指令并解析，直到遇到 quit 或 exit
-  // 构造 CommandParser，将其与所给的 UserManager，BookManager 和 Logger 关联起来
-  CommandParser(UserManager &user_manager_, BookManager &book_manager_, Logger &logger_);
 
   void ParseSu(const std::vector<std::string> &args);  // 解析 su [User-ID] ([Password])?
   void ParseLogout(const std::vector<std::string> &args);  // 解析 logout
@@ -53,8 +50,8 @@ class CommandParser {
   void ParseReport(const std::vector<std::string> &args);  // 解析 report myself 或 report finance 或 report employee
   void ParseShowFinance(const std::vector<std::string> &args);  // 解析 show finance ([Time])?
   void ParseLog(const std::vector<std::string> &args);  // 解析 log
- private:
   static void SplitStr(const std::string &s, std::vector<std::string> &fragments, char delim = ' ');
+ private:
   static bool Check(const std::string &s, bool (*validator)(char), int max_len);
   static bool CheckUserID(const std::string &);
   static bool CheckPrintable(const std::string &s, int max_len);
@@ -74,3 +71,5 @@ class CommandParser {
   template<bool no_price, bool no_multiple_keyword>
   static BookManager::Argument ParseFilter(const std::string &s);
 };
+
+#endif

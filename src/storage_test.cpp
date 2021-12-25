@@ -22,11 +22,11 @@ int main() {
     cin >> command;
     if (command == "insert") {
       cin >> bookname >> value;
-      ull.add(bookname, value);
+      ull.Add(bookname, value);
     } else if (command == "find") {
       cin >> bookname;
       std::vector<int> result;
-      ull.find(bookname, result);
+      ull.FindAll(bookname, result);
       if (result.empty()) {
         cout << "null";
       } else {
@@ -35,7 +35,7 @@ int main() {
       cout << "\n";
     } else if (command == "delete") {
       cin >> bookname >> value;
-      ull.remove(bookname, value);
+      ull.Remove(bookname, value);
     }
   }
   return 0;
