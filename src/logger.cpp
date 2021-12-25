@@ -1,8 +1,12 @@
 #include "logger.h"
 
+#include "bookstore.h"
+#include "user_manager.h"
+
 Logger::Logger() : record("data/finance.dat") {}
 
 void Logger::ShowFinance(int time) {
+  bookstore->user_manager->CheckPermission(7);
   if (time == 0) {
     std::cout << '\n';
   } else if (time == -1) {

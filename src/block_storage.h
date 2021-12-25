@@ -27,7 +27,8 @@ BlockStorage<T>::BlockStorage(const std::string &filename) : BasicFileIO(filenam
   info_size = sizeof(int) + sizeof(std::streamoff);
   if (!std::filesystem::exists(filename)) {
     // 文件结构：
-    // std::streamoff size, free_memory_head
+    // int size
+    // std::streamoff free_memory_head
     // T ...
     open(std::ios_base::out | std::ios_base::binary);
     int size = 0;
