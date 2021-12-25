@@ -23,7 +23,6 @@ set(src_dir
         src/user_manager.cpp
         src/block_storage.h
         src/book_manager.cpp
-        src/utils.h
         src/main.cpp src/logger.cpp src/bookstore.h src/bookstore.cpp)
 add_executable(code ${src_dir})
 
