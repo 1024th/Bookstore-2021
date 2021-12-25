@@ -5,20 +5,29 @@
 #include "logger.h"
 #include "exceptions.h"
 
+// input_mode：用于读入指令，忽略字符串头尾多余的分隔符（空格），且将多个连续分隔符（空格）视为一个
+template<bool input_mode>
 void CommandParser::SplitStr(const std::string &s, std::vector<std::string> &fragments, const char delim) {
   int i = 0;
-  while (s[i] == delim) ++i;
+  if constexpr (input_mode)
+    while (s[i] == delim) ++i;
   int j = i;
 
   for (; j < s.length(); ++j) {
     if (s[j] == delim) {
       fragments.push_back(s.substr(i, j - i));
-      i = j;
-      while (s[i] == delim) ++i;
-      j = i;
+      i = j + 1;
+      if constexpr (input_mode) {
+        while (s[i] == delim) ++i;
+        j = i;
+      }
     }
   }
-  if (i < s.length()) fragments.push_back(s.substr(i, j - i));
+  if constexpr (input_mode) {
+    if (i < s.length()) fragments.push_back(s.substr(i, j - i));
+  } else {
+    fragments.push_back(s.substr(i, j - i));
+  }
 }
 
 bool CommandParser::Check(const std::string &s, bool (*validator)(char), int max_len) {
@@ -84,7 +93,7 @@ void CommandParser::Run() {
     try {
       if (line.length() > 1024) throw CommandTooLong();
       std::vector<std::string> args;
-      SplitStr(line, args);
+      SplitStr<true>(line, args);
       if (args.empty()) continue;  // 空行
       if (args[0] == "quit" || args[0] == "exit") {
         if (args.size() == 1) break;

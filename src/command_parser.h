@@ -50,6 +50,7 @@ class CommandParser {
   void ParseReport(const std::vector<std::string> &args);  // 解析 report myself 或 report finance 或 report employee
   void ParseShowFinance(const std::vector<std::string> &args);  // 解析 show finance ([Time])?
   void ParseLog(const std::vector<std::string> &args);  // 解析 log
+  template<bool input_mode = false>
   static void SplitStr(const std::string &s, std::vector<std::string> &fragments, char delim = ' ');
  private:
   static bool Check(const std::string &s, bool (*validator)(char), int max_len);

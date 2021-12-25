@@ -129,7 +129,8 @@ void BookManager::ModifyBook(std::vector<Argument> &args) {
       case ArgType::KEYWORD: {
         std::vector<std::string> keywords;
         bookstore->command_parser->SplitStr(arg.value, keywords, '|');
-        for (int i = 0; i < keywords.size() - 1; ++i) {
+        for (int i = 0; i < keywords.size(); ++i) {
+          if(keywords[i].empty()) throw SyntaxError();
           for (int j = 0; j < i; ++j) {
             if (keywords[i] == keywords[j]) throw SyntaxError();  // keyword 包含重复信息段则操作失败
           }
