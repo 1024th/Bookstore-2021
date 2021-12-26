@@ -17,7 +17,7 @@ void Logger::ShowFinance(int time) {
       if (i.amount > 0) income += i.amount;
       else outcome += -i.amount;
     }
-    std::cout << "+ " << income << " - " << outcome << '\n';
+    std::cout << std::fixed << std::setprecision(2) << "+ " << income << " - " << outcome << '\n';
   } else {
     int record_size = record.GetSize();
     if (record_size < time) throw EntryNumExceeded();
@@ -28,7 +28,7 @@ void Logger::ShowFinance(int time) {
       if (i.amount > 0) income += i.amount;
       else outcome += -i.amount;
     }
-    std::cout << "+ " << income << " - " << outcome << '\n';
+    std::cout << std::fixed << std::setprecision(2) << "+ " << income << " - " << outcome << '\n';
   }
 }
 void Logger::ReportMyself() {
