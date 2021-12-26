@@ -138,10 +138,15 @@ void CommandParser::ParseRegister(const std::vector<std::string> &args) {
 
 void CommandParser::ParsePasswd(const std::vector<std::string> &args) {
   int len = args.size();
-  if (len < 3 || len > 4) throw SyntaxError();
-  if (!CheckUserID(args[1]) || !CheckPassword(args[2]) || (len == 4 && !CheckPassword(args[3]))) throw SyntaxError();
-  if (len == 3) bookstore->user_manager->ChangePassword(args[1], args[2]);
-  if (len == 4) bookstore->user_manager->ChangePassword(args[1], args[2], args[3]);
+  if (len == 3) {
+    if (!CheckUserID(args[1]) || !CheckPassword(args[2])) throw SyntaxError();
+    bookstore->user_manager->ChangePassword(args[1], args[2]);
+  } else if (len == 4) {
+    if (!CheckUserID(args[1]) || !CheckPassword(args[2]) || !CheckPassword(args[3])) throw SyntaxError();
+    bookstore->user_manager->ChangePassword(args[1], args[2], args[3]);
+  } else {
+    throw SyntaxError();
+  }
 }
 
 void CommandParser::ParseUseradd(const std::vector<std::string> &args) {
