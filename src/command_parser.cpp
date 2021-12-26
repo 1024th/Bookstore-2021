@@ -5,31 +5,6 @@
 #include "logger.h"
 #include "exceptions.h"
 
-// input_mode：用于读入指令，忽略字符串头尾多余的分隔符（空格），且将多个连续分隔符（空格）视为一个
-template<bool input_mode>
-void CommandParser::SplitStr(const std::string &s, std::vector<std::string> &fragments, const char delim) {
-  int i = 0;
-  if constexpr (input_mode)
-    while (s[i] == delim) ++i;
-  int j = i;
-
-  for (; j < s.length(); ++j) {
-    if (s[j] == delim) {
-      fragments.push_back(s.substr(i, j - i));
-      i = j + 1;
-      if constexpr (input_mode) {
-        while (s[i] == delim) ++i;
-        j = i;
-      }
-    }
-  }
-  if constexpr (input_mode) {
-    if (i < s.length()) fragments.push_back(s.substr(i, j - i));
-  } else {
-    fragments.push_back(s.substr(i, j - i));
-  }
-}
-
 bool CommandParser::Check(const std::string &s, bool (*validator)(char), int max_len) {
   int len = s.length();
   if (len > max_len) return false;
@@ -186,26 +161,26 @@ std::unordered_map<BookManager::ArgType, bool (*)(const std::string &)>
 
 template<bool no_price, bool no_multiple_keyword>
 BookManager::Argument CommandParser::ParseFilter(const std::string &s) {
-  std::vector<std::string> filter;
-  SplitStr(s, filter, '=');
-  if (filter.size() != 2) throw SyntaxError();
+  std::size_t pos = s.find('=');
+  if (pos == std::string::npos) throw SyntaxError();
+  std::string arg_type = s.substr(0, pos);
+  std::string content = s.substr(pos + 1);
   if constexpr (no_price) {  // 禁止出现 price 参数（用于 show）
-    if (filter[0] == "-price") throw SyntaxError();
+    if (arg_type == "-price") throw SyntaxError();
   }
-  auto it = map_book_argument.find(filter[0]);
+  auto it = map_book_argument.find(arg_type);
   if (it == map_book_argument.end()) throw SyntaxError();
   if constexpr (no_multiple_keyword) {  // 禁止出现多个关键词（用于 show）
-    if (it->second == BookManager::ArgType::KEYWORD && filter[1].find('|') != std::string::npos)
-      throw SyntaxError();
+    if (it->second == BookManager::ArgType::KEYWORD && content.find('|') != std::string::npos) throw SyntaxError();
   }
   if (it->second != BookManager::ArgType::ISBN && it->second != BookManager::ArgType::PRICE) {  // 去除双引号
-    if (filter[1].front() != '"' || filter[1].back() != '"') throw SyntaxError();
-    filter[1] = filter[1].substr(1, filter[1].length() - 2);
+    if (content.front() != '"' || content.back() != '"') throw SyntaxError();
+    content = content.substr(1, content.length() - 2);
   }
-  if (filter[1].empty()) throw SyntaxError();  // 附加参数内容为空则操作失败
-  if (!map_book_argument_checker[it->second](filter[1])) throw SyntaxError();
-  if (it->second == BookManager::ArgType::PRICE) return BookManager::Argument(it->second, std::stod(filter[1]));
-  return BookManager::Argument(it->second, filter[1]);
+  if (content.empty()) throw SyntaxError();  // 附加参数内容为空则操作失败
+  if (!map_book_argument_checker[it->second](content)) throw SyntaxError();
+  if (it->second == BookManager::ArgType::PRICE) return BookManager::Argument(it->second, std::stod(content));
+  return BookManager::Argument(it->second, content);
 }
 
 void CommandParser::ParseShowBook(const std::vector<std::string> &args) {
