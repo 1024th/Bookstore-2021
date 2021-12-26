@@ -112,16 +112,17 @@ void CommandParser::Run() {
   }
 }
 
-//CommandParser::CommandParser(UserManager &user_manager_, BookManager &book_manager_, Logger &logger_) : user_manager(
-//    user_manager_), book_manager(book_manager_), logger(logger_) {
-//}
-
 void CommandParser::ParseSu(const std::vector<std::string> &args) {
   int len = args.size();
-  if (len < 2 || !CheckUserID(args[1])) throw SyntaxError();
-  if (len == 2) bookstore->user_manager->Login(args[1]);
-  else if (len == 3) bookstore->user_manager->Login(args[1], args[2]);
-  else throw SyntaxError();
+  if (len == 2) {
+    if (!CheckUserID(args[1])) throw SyntaxError();
+    bookstore->user_manager->Login(args[1]);
+  } else if (len == 3) {
+    if (!CheckUserID(args[1]) || !CheckPassword(args[2])) throw SyntaxError();
+    bookstore->user_manager->Login(args[1], args[2]);
+  } else {
+    throw SyntaxError();
+  }
 }
 
 void CommandParser::ParseLogout(const std::vector<std::string> &args) {
