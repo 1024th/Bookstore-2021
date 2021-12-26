@@ -15,22 +15,22 @@
 
 const std::streamoff kBlockInfoLength = 2 * sizeof(std::streamoff) + sizeof(int);
 
-template<typename KeyType, typename ValueType>
+template <typename KeyType, typename ValueType>
 struct KeyValuePair {
   KeyType key;
   ValueType value;
   KeyValuePair() {}
   KeyValuePair(KeyType key_, ValueType value_) : key(key_), value(value_) {}
   KeyValuePair &operator=(const KeyValuePair &that);
-  template<typename T1, typename T2>
+  template <typename T1, typename T2>
   friend bool operator<(const KeyValuePair<T1, T2> &a, const KeyValuePair<T1, T2> &b);
-  template<typename T1, typename T2>
+  template <typename T1, typename T2>
   friend bool operator==(const KeyValuePair<T1, T2> &a, const KeyValuePair<T1, T2> &b);
-  template<typename T1, typename T2>
+  template <typename T1, typename T2>
   friend bool operator!=(const KeyValuePair<T1, T2> &a, const KeyValuePair<T1, T2> &b);
 };
 
-template<typename NodeType, const int kBlockSize>
+template <typename NodeType, const int kBlockSize>
 struct Block {
   std::streamoff next, prev;
   int len;
@@ -44,7 +44,7 @@ struct Block {
 #endif  // MyDebug
 };
 
-template<typename KeyType, typename ValueType, const int kBlockSize = 320>
+template <typename KeyType, typename ValueType, const int kBlockSize = 320>
 class UnrolledLinkedList {
   BasicFileIO file;
 
@@ -84,36 +84,36 @@ class UnrolledLinkedList {
   static ValueType GetValueTypeMin() { return ValueType(); }
 };
 
-template<typename T1, const int size>
+template <typename T1, const int size>
 class UnrolledLinkedList<T1, int, size> {
   static int GetValueTypeMin() { return -2147483648; }
 };
 
-template<typename T1, typename T2>
+template <typename T1, typename T2>
 KeyValuePair<T1, T2> &KeyValuePair<T1, T2>::operator=(const KeyValuePair<T1, T2> &that) {
   key = that.key;
   value = that.value;
   return *this;
 }
 
-template<typename T1, typename T2>
+template <typename T1, typename T2>
 bool operator<(const KeyValuePair<T1, T2> &a, const KeyValuePair<T1, T2> &b) {
   if (a.key < b.key) return true;
   if (a.key > b.key) return false;
   return a.value < b.value;
   // return a.key < b.key;
 }
-template<typename T1, typename T2>
+template <typename T1, typename T2>
 bool operator==(const KeyValuePair<T1, T2> &a, const KeyValuePair<T1, T2> &b) {
   return a.key == b.key && a.value == b.value;
 }
 
-template<typename T1, typename T2>
+template <typename T1, typename T2>
 bool operator!=(const KeyValuePair<T1, T2> &a, const KeyValuePair<T1, T2> &b) {
   return !(a == b);
 }
 
-template<typename T, const int size>
+template <typename T, const int size>
 Block<T, size> &Block<T, size>::operator=(const Block<T, size> &that) {
   if (this == &that) return *this;
   next = that.next;
@@ -131,7 +131,7 @@ std::ostream &operator<<(std::ostream &os, const Block<T, size> &block) {
 }
 #endif  // MyDebug
 
-template<typename T1, typename T2, const int size>
+template <typename T1, typename T2, const int size>
 UnrolledLinkedList<T1, T2, size>::UnrolledLinkedList(const std::string &filename_) : file(filename_) {
 #ifdef MyDebug
   // std::filesystem::Remove(filename);
@@ -156,7 +156,7 @@ UnrolledLinkedList<T1, T2, size>::UnrolledLinkedList(const std::string &filename
   }
 }
 
-template<typename T1, typename T2, const int size>
+template <typename T1, typename T2, const int size>
 void UnrolledLinkedList<T1, T2, size>::Add(const T1 &key, const T2 &value) {
   KeyValuePair key_value_pair(key, value);
   file.open();
@@ -184,7 +184,7 @@ void UnrolledLinkedList<T1, T2, size>::Add(const T1 &key, const T2 &value) {
   file.close();
 }
 
-template<typename T1, typename T2, const int size>
+template <typename T1, typename T2, const int size>
 void UnrolledLinkedList<T1, T2, size>::Remove(const T1 &key, const T2 &value) {
   NodeType key_value_pair(key, value);
   file.open();
@@ -211,7 +211,7 @@ void UnrolledLinkedList<T1, T2, size>::Remove(const T1 &key, const T2 &value) {
   file.close();
 }
 
-template<typename T1, typename T2, const int size>
+template <typename T1, typename T2, const int size>
 void UnrolledLinkedList<T1, T2, size>::FindAll(const T1 &key, std::vector<T2> &result) {
   KeyValuePair<T1, T2> key_value_pair(key, GetValueTypeMin());  // TODO: replace it with min value of ValueType
   file.open();
@@ -237,7 +237,7 @@ void UnrolledLinkedList<T1, T2, size>::FindAll(const T1 &key, std::vector<T2> &r
   file.close();
 }
 
-template<typename T1, typename T2, const int size>
+template <typename T1, typename T2, const int size>
 int UnrolledLinkedList<T1, T2, size>::FindBlock(const NodeType &key_value_pair, std::streamoff &block_pos,
                                                 Block<NodeType, size> &block) {
   file.Read(block_pos, 0);
@@ -255,7 +255,7 @@ int UnrolledLinkedList<T1, T2, size>::FindBlock(const NodeType &key_value_pair, 
   return pos;
 }
 
-template<typename T1, typename T2, const int size>
+template <typename T1, typename T2, const int size>
 void UnrolledLinkedList<T1, T2, size>::CheckMerge(Block<NodeType, size> &block, std::streamoff block_pos) {
   // if (block.prev) {
   //   Block prev_block;
@@ -274,7 +274,7 @@ void UnrolledLinkedList<T1, T2, size>::CheckMerge(Block<NodeType, size> &block, 
   if (block.len == 0) DeleteBlock(block, block_pos);
 }
 
-template<typename T1, typename T2, const int size>
+template <typename T1, typename T2, const int size>
 void UnrolledLinkedList<T1, T2, size>::MergeBlock(Block<NodeType, size> &block1, std::streamoff block1_pos,
                                                   Block<NodeType, size> &block2, std::streamoff block2_pos) {
 #ifdef MyDebug
@@ -289,7 +289,7 @@ void UnrolledLinkedList<T1, T2, size>::MergeBlock(Block<NodeType, size> &block1,
   DeleteBlock(block2, block2_pos);
 }
 
-template<typename T1, typename T2, const int size>
+template <typename T1, typename T2, const int size>
 void UnrolledLinkedList<T1, T2, size>::DeleteBlock(Block<NodeType, size> &block, std::streamoff block_pos) {
   if (block.prev)
     SetNext(block.prev, block.next);
@@ -303,7 +303,7 @@ void UnrolledLinkedList<T1, T2, size>::DeleteBlock(Block<NodeType, size> &block,
   SetFreeMemoryHead(block_pos);
 }
 
-template<typename T1, typename T2, const int size>
+template <typename T1, typename T2, const int size>
 void UnrolledLinkedList<T1, T2, size>::SplitBlock(Block<NodeType, size> &block, std::streamoff block_pos) {
   Block<NodeType, size> new_block;
   new_block.next = block.next;
@@ -324,29 +324,29 @@ void UnrolledLinkedList<T1, T2, size>::SplitBlock(Block<NodeType, size> &block, 
 #endif  // MyDebug
 }
 
-template<typename T1, typename T2, const int size>
+template <typename T1, typename T2, const int size>
 void UnrolledLinkedList<T1, T2, size>::SetPrev(std::streamoff block_pos, std::streamoff prev_block_pos) {
   file.Write(prev_block_pos, block_pos + sizeof(std::streamoff));
 }
 
-template<typename T1, typename T2, const int size>
+template <typename T1, typename T2, const int size>
 void UnrolledLinkedList<T1, T2, size>::SetNext(std::streamoff block_pos, std::streamoff next_block_pos) {
   file.Write(next_block_pos, block_pos);
 }
 
-template<typename T1, typename T2, const int size>
+template <typename T1, typename T2, const int size>
 std::streamoff UnrolledLinkedList<T1, T2, size>::GetFreeMemoryHead() {
   std::streamoff free_memory_head;
   file.Read(free_memory_head, 2 * sizeof(std::streamoff));
   return free_memory_head;
 }
 
-template<typename T1, typename T2, const int size>
+template <typename T1, typename T2, const int size>
 void UnrolledLinkedList<T1, T2, size>::SetFreeMemoryHead(std::streamoff free_memory_head) {
   file.Write(free_memory_head, 2 * sizeof(std::streamoff));
 }
 
-template<typename T1, typename T2, const int size>
+template <typename T1, typename T2, const int size>
 std::streamoff UnrolledLinkedList<T1, T2, size>::WriteToNewBlock(const Block<NodeType, size> &block) {
   std::streamoff free_memory_head = GetFreeMemoryHead(), new_block_pos;
   if (free_memory_head) {
@@ -367,7 +367,7 @@ std::streamoff UnrolledLinkedList<T1, T2, size>::WriteToNewBlock(const Block<Nod
   return new_block_pos;
 }
 
-template<typename T1, typename T2, const int size>
+template <typename T1, typename T2, const int size>
 void UnrolledLinkedList<T1, T2, size>::Update(const T1 &key, const T2 &value) {
   NodeType key_value_pair(key, GetValueTypeMin());
   file.open();
@@ -383,12 +383,16 @@ void UnrolledLinkedList<T1, T2, size>::Update(const T1 &key, const T2 &value) {
   file.close();
 }
 
-template<typename T1, typename T2, const int size>
+template <typename T1, typename T2, const int size>
 void UnrolledLinkedList<T1, T2, size>::GetAll(std::vector<T2> &result) {
   file.open();
   std::streamoff block_pos;
   Block<NodeType, size> block;
   file.Read(block_pos, 0);
+  if (block_pos == 0) {
+    file.close();
+    return;
+  }
   file.Read(block, block_pos);
   while (block_pos) {
     file.Read(block, block.next);
