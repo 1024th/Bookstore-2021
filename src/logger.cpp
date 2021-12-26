@@ -32,19 +32,16 @@ void Logger::ShowFinance(int time) {
   }
 }
 void Logger::ReportMyself() {
-
+  bookstore->user_manager->CheckPermission(3);
 }
 void Logger::ReportFinance() {
-
-}
-void Logger::ReportWork() {
-
+  bookstore->user_manager->CheckPermission(7);
 }
 void Logger::ReportEmployee() {
-
+  bookstore->user_manager->CheckPermission(7);
 }
 void Logger::ShowLog() {
-
+  bookstore->user_manager->CheckPermission(7);
 }
 void Logger::Log(const std::string &command) {
 
