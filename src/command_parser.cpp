@@ -65,6 +65,8 @@ bool CommandParser::CheckFloat(const std::string &s) {
 void CommandParser::Run() {
   std::string line;
   while (std::getline(std::cin, line)) {
+    const User &user = bookstore->user_manager->GetCurrentUser();
+    bool success = true;
     try {
       if (line.length() > 1024) throw CommandTooLong();
       std::vector<std::string> args;
@@ -78,12 +80,14 @@ void CommandParser::Run() {
       if (it == map_function.end()) throw SyntaxError();
       (this->*(it->second))(args);
     } catch (const BasicException &e) {
+      success = false;
       std::cout << "Invalid\n";
 #ifdef MyDebug
       std::cout << e.what() << std::endl;
       std::cout << "Invalid command is: " << line << std::endl;
 #endif  // MyDebug
     }
+    bookstore->logger->Log(user.user_ID, user.priority, line, success);
   }
 }
 

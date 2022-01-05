@@ -23,7 +23,7 @@ set(src_dir
         src/user_manager.cpp
         src/block_storage.h
         src/book_manager.cpp
-        src/main.cpp src/logger.cpp src/bookstore.h src/bookstore.cpp)
+        src/main.cpp src/logger.cpp src/bookstore.h src/bookstore.cpp src/ansi.h)
 add_executable(code ${src_dir})
 
 # 添加链接库

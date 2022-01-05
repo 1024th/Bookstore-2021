@@ -11,7 +11,7 @@ BookManager::BookManager()
       author_index("data/book_author.dat"),
       keyword_index("data/book_keyword.dat") {}
 
-template <bool need_sort>
+template<bool need_sort>
 void BookManager::PrintBooks(std::vector<std::streamoff> &book_offsets) {
   if (book_offsets.empty()) {  // 无满足要求的图书时输出空行
     std::cout << '\n';
@@ -19,12 +19,12 @@ void BookManager::PrintBooks(std::vector<std::streamoff> &book_offsets) {
   }
   Book book;
   std::vector<Book> matched_books;
-  for (auto i : book_offsets) {
+  for (auto i: book_offsets) {
     books.Get(book, i);
     matched_books.push_back(book);
   }
   if constexpr (need_sort) std::sort(matched_books.begin(), matched_books.end());  // 以 ISBN 字典升序输出图书信息
-  for (auto &i : matched_books) {
+  for (auto &i: matched_books) {
     std::cout << i << '\n';
   }
 }
@@ -38,20 +38,15 @@ void BookManager::ShowBook(const BookManager::Argument &arg) {
   bookstore->user_manager->CheckPermission(1);
   std::vector<std::streamoff> book_offsets;
   switch (arg.type) {
-    case ArgType::ISBN:
-      ISBN_index.FindAll(arg.value, book_offsets);
+    case ArgType::ISBN:ISBN_index.FindAll(arg.value, book_offsets);
       break;
-    case ArgType::NAME:
-      book_name_index.FindAll(arg.value, book_offsets);
+    case ArgType::NAME:book_name_index.FindAll(arg.value, book_offsets);
       break;
-    case ArgType::AUTHOR:
-      author_index.FindAll(arg.value, book_offsets);
+    case ArgType::AUTHOR:author_index.FindAll(arg.value, book_offsets);
       break;
-    case ArgType::KEYWORD:
-      keyword_index.FindAll(arg.value, book_offsets);
+    case ArgType::KEYWORD:keyword_index.FindAll(arg.value, book_offsets);
       break;
-    default:
-      throw BasicException();
+    default:throw BasicException();
   }
   PrintBooks<true>(book_offsets);
   //  if (arg.value == "bianco") {
@@ -77,7 +72,7 @@ void BookManager::BuyBook(const std::string &ISBN, int quantity) {
   std::cout << std::fixed << std::setprecision(2) << total_cost << '\n';
   book.quantity -= quantity;
   books.Update(book, book_offset[0]);
-  bookstore->logger->AddTransaction(Transaction(total_cost, book_offset[0], quantity));
+  bookstore->logger->AddTransaction(total_cost, book_offset[0], quantity);
 }
 void BookManager::SelectBook(const std::string &ISBN) {
   bookstore->user_manager->CheckPermission(3);
@@ -99,7 +94,7 @@ void BookManager::ModifyBook(std::vector<Argument> &args) {
   if (offset == 0) throw NoBookSelected();
   Book book;
   books.Get(book, offset);
-  for (auto &arg : args) {
+  for (auto &arg: args) {
     // std::cout << arg << std::endl;
     switch (arg.type) {
       case ArgType::ISBN: {
@@ -130,7 +125,7 @@ void BookManager::ModifyBook(std::vector<Argument> &args) {
         std::vector<std::string> keywords;
         bookstore->command_parser->SplitStr(arg.value, keywords, '|');
         for (int i = 0; i < keywords.size(); ++i) {
-          if(keywords[i].empty()) throw SyntaxError();
+          if (keywords[i].empty()) throw SyntaxError();
           for (int j = 0; j < i; ++j) {
             if (keywords[i] == keywords[j]) throw SyntaxError();  // keyword 包含重复信息段则操作失败
           }
@@ -143,11 +138,11 @@ void BookManager::ModifyBook(std::vector<Argument> &args) {
         if (!book.keyword.empty()) {
           std::vector<std::string> old_keywords;
           bookstore->command_parser->SplitStr(book.keyword, old_keywords, '|');
-          for (auto &i : old_keywords) keyword_index.Remove(i, offset);
+          for (auto &i: old_keywords) keyword_index.Remove(i, offset);
         }
         book.keyword = arg.value;
         books.Update(book, offset);
-        for (auto &i : keywords) {
+        for (auto &i: keywords) {
           keyword_index.Add(i, offset);
         }
         break;
@@ -157,8 +152,7 @@ void BookManager::ModifyBook(std::vector<Argument> &args) {
         books.Update(book, offset);
         break;
       }
-      default:
-        throw BasicException();
+      default:throw BasicException();
     }
   }
 }
@@ -171,5 +165,10 @@ void BookManager::ImportBook(int quantity, double total_cost) {
   books.Get(book, offset);
   book.quantity += quantity;
   books.Update(book, offset);
-  bookstore->logger->AddTransaction(Transaction(-total_cost, offset, quantity));
+  bookstore->logger->AddTransaction(-total_cost, offset, quantity);
+}
+Char<20> BookManager::GetISBN(std::streamoff offset) {
+  Book book;
+  books.Get(book, offset);
+  return book.ISBN;
 }

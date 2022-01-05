@@ -15,7 +15,9 @@ class Char {
   Char(const char *cstr) { strcpy(content, cstr); }
   operator std::string() const { return str(); }
   std::string str() const { return std::string(content); }
-
+  char *c_str() { return content; }
+  char &operator[](int index) { return content[index]; }
+  char operator[](int index) const { return content[index]; }
   Char &operator=(const Char &that) {
     if (this == &that) return *this;
     strcpy(content, that.content);

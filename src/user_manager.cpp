@@ -97,3 +97,9 @@ void UserManager::SelectBook(std::streamoff book_offset) {
 std::streamoff UserManager::GetSelectedBook() const {
   return user_stack.back().second;
 }
+const Char<30> &UserManager::GetCurrentUserID() {
+  return user_stack.back().first.user_ID;
+}
+const User &UserManager::GetCurrentUser() {
+  return user_stack.back().first;
+}

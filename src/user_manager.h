@@ -43,6 +43,8 @@ class UserManager {
   void SelectBook(std::streamoff book_offset);
   std::streamoff GetSelectedBook() const;
 
+  const Char<30> &GetCurrentUserID();
+  const User &GetCurrentUser();
  private:
   std::vector<std::pair<User, std::streamoff>> user_stack;  // 用户栈，储存登录的用户和他所选的图书的 offset
   UnrolledLinkedList<Char<30>, User> user_data;

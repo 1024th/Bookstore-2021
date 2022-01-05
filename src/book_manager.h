@@ -50,6 +50,7 @@ class BookManager {
   void SelectBook(const std::string &ISBN);  // 以当前账户选中指定图书
   void ModifyBook(std::vector<Argument> &args);  // 更新选中图书的信息
   void ImportBook(int quantity, double total_cost);  // 指定交易总额购入指定数量的选中图书
+  Char<20> GetISBN(std::streamoff offset);
  private:
   BlockStorage<Book> books;
   UnrolledLinkedList<Char<20>, std::streamoff> ISBN_index;
