@@ -27,7 +27,7 @@ bool CommandParser::CheckPassword(const std::string &s) {
   return CheckUserID(s);
 }
 
-bool CommandParser::IsPrintable(char c) { return 31 < c && c < 127; }
+bool CommandParser::IsPrintable(char c) { return 31 < c && c < 127 || c < 0; }
 
 bool CommandParser::CheckPrintable(const std::string &s, int max_len) {
   return Check(s, IsPrintable, max_len);
