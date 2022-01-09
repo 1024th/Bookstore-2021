@@ -10,11 +10,9 @@ test*/
 ull-test/
 *.dat
 *.index
-asset/
 Testing/
 *.cbp
 .cmake/
 clean.sh
-asset/
 src/test_*
 *.ans

@@ -127,18 +127,24 @@ def run_Robust():
     print('Your Robust Test Score is', sum / 5 * 2)
     return sum / 5 * 2
 
-print('Input the folder of your program, which should contain an executable \'code\' and a unix-shell script clean.sh')
+# print('Input the folder of your program, which should contain an executable \'code\' and a unix-shell script clean.sh')
 
-folder = str(input())
+# folder = str(input())
+# folder = "Bookstore-2021"
+folder = "$GITHUB_WORKSPACE"
 init(folder)
 
 Score = 0
 
 Score += run_Basic()
+print()
 Score += run_Advanced()
+print()
 Score += run_Complex()
+print()
 # Score += run_Insider()
 Score += run_Robust()
 
 cleanAll()
+print()
 print('Your Total Score is', Score)
