@@ -13,6 +13,5 @@ ull-test/
 Testing/
 *.cbp
 .cmake/
-clean.sh
 src/test_*
 *.ans

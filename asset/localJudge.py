@@ -6,7 +6,7 @@ import os
 import filecmp
 
 def init(folder):
-    os.system('cp ' + folder + '/code ./')
+    os.system('cp ' + folder + '/build/code ./')
     os.system('cp ' + folder + '/clean.sh ./')
 
 def cleanSh():
