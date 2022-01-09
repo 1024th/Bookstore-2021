@@ -1,6 +1,9 @@
 #ifndef BOOKSTORE_SRC_ANSI_H_
 #define BOOKSTORE_SRC_ANSI_H_
 
+#include<vector>
+#include<iostream>
+
 class ANSI {
  public:
   enum Code {
